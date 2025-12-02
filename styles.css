@@ -442,9 +442,9 @@ body {
 /* Yellow area: heatmap box */
 .matrix-heatmap-wrapper {
   flex: 1 1 auto;
-  background: radial-gradient(circle at top left, #1f2933, #020617);
+  background: rgba(0, 0, 0, 0.7);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.6);
   padding: 0.5rem;
   overflow: hidden;
 }
@@ -725,6 +725,12 @@ body {
 .hero-ven-panel.hero-panel--hidden {
   display: none !important;
 }
+#hero-panel-venn {
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 1rem 1.5rem;
+}
 
 /* --- Slide 4 Venn styles --- */
 #hero-panel-venn .hero-widget {
@@ -755,8 +761,9 @@ body {
 }
 
 #venn-4 {
-  width: 700px;
-  height: 500px;
+  width: 100%;
+  max-width: 520px;   /* keeps it inside the right panel */
+  margin: 0 auto;     /* centers it nicely */
 }
 
 /* Tooltip (reusing their styling) */
@@ -864,4 +871,126 @@ body {
   background: #e50914;
   border-radius: 999px;
   vertical-align: -1px;
+}
+
+.sim-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sim-card {
+ /* match matrix-heatmap-wrapper + matrix-controls */
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 0.75rem 1rem;
+}
+
+.sim-chart {
+  width: 100%;
+  height: 260px;
+}
+
+.sim-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.sim-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.sim-table th,
+.sim-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #1f2937;
+}
+
+/* ===== Netflix-style Venn colors ===== */
+
+/* ===== High-Brightness Netflix-Style Circle Colors ===== */
+
+#venn-4 g.venn-area path {
+  stroke-width: 2px !important;
+  stroke-opacity: 0.5 !important;
+}
+
+/* Toy Story (bright electric blue) */
+#venn-4 g[data-venn-sets="Toy Story (1995)"] path {
+  fill: rgba(54, 138, 255, 0.55) !important;   /* bright + clean */
+  stroke: rgba(120, 180, 255, 0.9) !important;
+}
+
+/* Willy Wonka (bright amber/orange) */
+#venn-4 g[data-venn-sets="Willy Wonka & the Chocolate Factory (1971)"] path {
+  fill: rgba(255, 165, 85, 0.55) !important;
+  stroke: rgba(255, 195, 130, 0.9) !important;
+}
+
+/* Aladdin (bright emerald green) */
+#venn-4 g[data-venn-sets="Aladdin (1992)"] path {
+  fill: rgba(60, 210, 130, 0.55) !important;
+  stroke: rgba(110, 255, 180, 0.9) !important;
+}
+
+
+
+
+/* Circle labels (movie names) */
+#venn-4 text {
+  fill: #f5f5f5 !important; 
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Overlap numbers */
+#venn-4 .venn-area text {
+  fill: #ffffff !important;      /* pure white for high contrast */
+  font-size: 16px !important;    /* readable */
+  font-weight: 700 !important;
+  text-shadow: 0 0 4px rgba(0,0,0,0.8); /* glow for visibility */
+}
+
+#venn-4 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: none;     /* allow full flexibility */
+  padding: 0.5rem 0;
+}
+#venn-4 svg {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+
+#collabfilter-5 {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* make it a smaller, solid rectangle without stretching */
+#collabfilter-5 img {
+  width: 600px;        /* smaller, fixed width */
+  max-width: 100%;     /* still responsive on small screens */
+  max-height: 500px;   /* keeps it from being super tall */
+  height: auto;        /* no distortion */
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  margin-top: 10rem; 
+}
+
+
+/* Nudge Slide 5's content down a little */
+#hero-panel-5 .hero-widget {
+  margin-top: -16rem;   /* adjust 1–3rem until the alignment feels right */
 }

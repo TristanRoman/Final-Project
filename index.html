@@ -19,7 +19,7 @@
       <div class="profile-card">
 
         <div class="profile-logo">NETFLIX</div>
-        <h1 class="profile-title">Who’s Watching?</h1>
+        <h1 class="profile-title">What are you watching?</h1>
 
         <div class="profile-row">
 
@@ -28,7 +28,7 @@
             <div class="avatar-wrapper">
               <div class="avatar-inner">
                 <div class="avatar-front" style="background-image:url('ghibli-1.jpeg');"></div>
-                <div class="avatar-back">Contains all user-movie ratings</div>
+                <div class="avatar-back">Discovers patterns in rating sparsity</div>
               </div>
             </div>
             <span>User Ratings Matrix</span>
@@ -39,10 +39,10 @@
             <div class="avatar-wrapper">
               <div class="avatar-inner">
                 <div class="avatar-front" style="background-image:url('ghibli-2.jpeg');"></div>
-                <div class="avatar-back">Finds patterns between users or movies</div>
+                <div class="avatar-back">Finds relations between users or movies</div>
               </div>
             </div>
-            <span>Similarity Calculator</span>
+            <span>Similarity Calculations</span>
           </div>
 
           <!-- PREDICTION ENGINE -->
@@ -50,10 +50,10 @@
             <div class="avatar-wrapper">
               <div class="avatar-inner">
                 <div class="avatar-front" style="background-image:url('ghibli-3.jpeg');"></div>
-                <div class="avatar-back">Generates rating predictions</div>
+                <div class="avatar-back">Suggests movies that similar users watched</div>
               </div>
             </div>
-            <span>Prediction Engine</span>
+            <span>Collaborative Filtering</span>
           </div>
 
           <!-- RECOMMENDATION FILTER -->
@@ -61,15 +61,15 @@
             <div class="avatar-wrapper">
               <div class="avatar-inner">
                 <div class="avatar-front" style="background-image:url('ghibli-4.jpeg');"></div>
-                <div class="avatar-back">Selects top N movies to suggest</div>
+                <div class="avatar-back">Picks movies you would like</div>
               </div>
             </div>
-            <span>Recommendation Filter</span>
+            <span>Recommendation Demo</span>
           </div>
 
         </div>
 
-        <button class="manage-btn" id="continue-btn">CONTINUE AS GUEST</button>
+        <button class="manage-btn" id="continue-btn">START WATCHING</button>
       </div>
     </section>
 
@@ -147,7 +147,7 @@
                 <button
                   class="btn btn--secondary"
                   id="prototype-writeup-btn">
-                  Prototype Writeup
+                  Restart
                 </button>
               </div>
             </div>
@@ -209,59 +209,72 @@
                 </p>
               </div>
             </div>
-           <!-- 🔹 Similarity vectors panel for slide 3 -->
-            <div id="hero-sim-panel" class="hero-sim-panel hero-panel--hidden">
-            <!-- top card: vector plot -->
-            <div class="sim-plot-card">
-                <svg id="sim-vectors" class="sim-vectors-svg"></svg>
+            <div id="hero-sim-panel" class="hero-panel hero-panel--hidden">
+              <div class="sim-layout">
+                <!-- TOP: chart + summary -->
+                <section class="sim-card sim-card--chart">
+                  <div class="sim-user-prefs">
+                    <h4 class="sim-subheading">User preferences (sample users)</h4>
+                    <ul>
+                      <li><strong>User 1:</strong> comedy 10, romance 1</li>
+                      <li><strong>User 474:</strong> comedy 8, romance 3</li>
+                      <li><strong>User 606:</strong> comedy 2, romance 8</li>
+                    </ul>
+                  </div>
+                  <svg id="sim-vectors" class="sim-chart"></svg>
+                  <div id="sim-summary" class="sim-summary"></div>
+                </section>
+
+                
+              </div>
             </div>
 
-            <!-- bottom card: controls + movie list -->
-            <div class="sim-controls-card">
-                <h3 class="sim-title">Movie Vectors &amp; Cosine Similarity</h3>
-                <p class="sim-subtitle">
-                Pick any two movies, then hit “Calculate” to see how close they are in genre space.
-                </p>
 
-                <!-- 4 buttons in one row -->
-                <div class="sim-movie-list" id="sim-movie-list">
-                <!-- JS will populate these movie items -->
-                </div>
-
-                <button id="sim-calc-btn" class="btn btn--primary sim-calc-btn">
-                Calculate similarity
-                </button>
-
-                <p id="sim-result-text" class="sim-result-text">
-                Select exactly two movies above, then hit “Calculate”.
-                </p>
-            </div>
-            </div>
             <!-- 🔹 Slide 4: Venn / Jaccard panel (RIGHT SIDE ONLY) -->
-            <div id="hero-panel-venn" class="hero-sim-panel hero-panel--hidden">
+            <div id="hero-panel-venn" class="hero-panel hero-panel--hidden">
               <div class="hero-widget">
                 <!-- Controls -->
-                <div id="controls-4">
-                  <div id="sliderRow-4">
-                    <span>Minimum rating threshold:</span>
-                    <input
-                      type="range"
-                      id="thresholdSlider-4"
-                      min="1"
-                      max="5"
-                      step="0.5"
-                      value="3"
-                    />
-                    <span>Current: <span id="thresholdValue-4">3.0</span></span>
-                  </div>
-                  <div id="statusMessage-4"></div>
-                </div>
-
+                
                 <!-- Venn diagram container -->
                 <div id="venn-4"></div>
-
+                <div id="statusMessage-4"></div>
+                <div id="controls-4">
+                                  <div id="sliderRow-4">
+                                    <span>Minimum rating threshold:</span>
+                                    <input
+                                      type="range"
+                                      id="thresholdSlider-4"
+                                      min="1"
+                                      max="5"
+                                      step="0.5"
+                                      value="3"
+                                    />
+                                    <span>Current: <span id="thresholdValue-4">3.0</span></span>
+                                  </div>
+                                  
+                                </div>
                 <!-- Tooltip -->
                 <div id="tooltip-4" class="tooltip"></div>
+              </div>
+            </div>
+<!-- ================= SLIDE 5 PANEL (Collaborative Filtering) ================= -->
+            <div id="hero-panel-5" class="hero-panel hero-panel--hidden">
+              <div class="hero-widget">
+
+                
+
+                <!-- Play Button -->
+                <!---<button id="playButton-5" class="netflix-btn">Play Animation</button> -->
+                <!-- Static visualization image -->
+                <div id="collabfilter-5">
+                  <img
+                    src="collabfilter-static.png"
+                    alt="Collaborative filtering visualization"
+                    class="collab-static-img"
+                  />
+                </div>
+                
+
               </div>
             </div>
 
@@ -388,6 +401,7 @@
 
 <!-- your app code -->
 <script src="script.js"></script>
+<script type="module" src="collabfilter-slide5.js"></script>
 
 
 </body>

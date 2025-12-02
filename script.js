@@ -148,7 +148,7 @@ const heroSlides = [
     title: "The Rating Matrix (Data Foundation)",
     tag: "N SERIES",
     description:
-      "Interactive heatmap of user–movie ratings. Use the sliders to reveal how sparse the data is and how patterns emerge as we add more users.",
+      "A movie recommender system stores how users rate movies in a ''big grid''. When you raise the rating threshold, the grid looks emptier because only high ratings remain. Since most people rate only a few movies, the system uses ratings from many users to fill in the gaps. When you increase the number of users, the grid fills up again, showing how more data helps the system make better recommendations.",
   },
   {
     id: "similarity-part1",
@@ -156,7 +156,7 @@ const heroSlides = [
     title: "Similarity Calculations (Part 1)",
     tag: "N SERIES",
     description:
-      "Genre-space playground: pick two movies to see their vectors in genre space and how the angle between them becomes cosine similarity—the math behind “these feel alike.”",
+      "Cosine similarity shows how close two people’s movie tastes are by turning their preferences into ''arrows'' (vectors) on a graph. If two arrows point in almost the same direction, the users enjoy movies in a similar way; if the arrows point in very different directions, their tastes differ. By measuring the angle between each pair of arrows, the system can quickly figure out which users are most alike and use that information to suggest movies they might like.",
   },
   {
   id: "hero-panel-venn",
@@ -164,8 +164,26 @@ const heroSlides = [
   title: "Similarity Calculations (Part 2)",
   tag: "N SERIES",
   description:
-    "Explore how users overlap across three movies. Move the rating slider and watch the Venn regions shift — a visual demo of Jaccard similarity in action."
-}
+    "This visualization uses Jaccard similarity, which is just a way to measure how much two groups overlap. If many of the same people liked both movies, their tastes are more alike. By seeing where these groups overlap, we can guess which movies someone might enjoy next."
+},
+{
+  id: "hero-panel-5",
+  mode: "collab",          // or whatever your JS switch uses
+  title: "Collaborative Filtering",
+  tag: "N SERIES",
+  description:
+    "Collaborative filtering recommends movies by finding people who like similar things to you. If someone with similar tastes enjoyed a movie you haven’t seen yet, the system guesses you might like it too. This lets you discover surprising new movies—even if they’re not your usual genre."
+},
+{
+    id: "hidden-trends2",
+    mode: "story",
+    title: "Hidden Trends (Part 2)",
+    tag: "N SERIES",
+    description:
+      "After trekking through spellbound rating grids, glowing similarity paths, and the overlap rings of Jaccard, our data-mages finally reach the core: a living collaborative engine that weaves every viewer’s taste into real recommendations. No illusions now — this is the full spellbook, the true recommender awakened and ready to reveal the next movie you were always meant to find.",
+    customBackground: "img/hidden-trends-2.png",
+    yearOverride: "2025",
+  }
 /*,
   {
     id: "squid-game",
@@ -236,6 +254,10 @@ async function initRatingMatrixHero() {
       .attr("preserveAspectRatio", "xMidYMid meet");
 
     ratingHeatmapSvg.append("g").attr("class", "cells");
+    // NEW: axis + legend groups
+    ratingHeatmapSvg.append("g").attr("class", "x-axis");
+    ratingHeatmapSvg.append("g").attr("class", "y-axis");
+    ratingHeatmapSvg.append("g").attr("class", "legend-scale");
 
     const threshSlider = document.getElementById("threshold-slider");
     const usersSlider = document.getElementById("usercount-slider");
@@ -271,8 +293,14 @@ function renderRatingMatrix(threshold, userCount, width, height) {
   if (!ratingMatrixReady || !ratingHeatmapSvg) return;
 
   const nMovies = ratingMoviesMax;
-  const cellWidth = width / nMovies;
-  const cellHeight = height / userCount;
+
+  // margins inside the SVG so we have space for labels + legend
+  const margin = { top: 10, right: 50, bottom: 26, left: 40 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const cellWidth = innerWidth / nMovies;
+  const cellHeight = innerHeight / userCount;
 
   const cells = [];
   for (let u = 0; u < userCount; u++) {
@@ -298,81 +326,165 @@ function renderRatingMatrix(threshold, userCount, width, height) {
   rects
     .enter()
     .append("rect")
-    .attr("x", (d) => d.m * cellWidth)
-    .attr("y", (d) => d.u * cellHeight)
+    .attr("x", (d) => margin.left + d.m * cellWidth)
+    .attr("y", (d) => margin.top + d.u * cellHeight)
     .attr("width", cellWidth - 1)
     .attr("height", cellHeight - 1)
-    .attr("fill", (d) => color(d.rating))
-    .attr("opacity", 0.9)
-    .append("title")
-    .text(
-      (d) =>
-        `User ${d.u + 1} · Movie ${d.m + 1} · Rating ${d.rating.toFixed(1)}`
-    );
+    .attr("fill", (d) => color(d.rating))   // 👈 add fill on first draw
+    .attr("opacity", 0.9); 
 
   rects
-    .attr("x", (d) => d.m * cellWidth)
-    .attr("y", (d) => d.u * cellHeight)
+    .attr("x", (d) => margin.left + d.m * cellWidth)
+    .attr("y", (d) => margin.top + d.u * cellHeight)
     .attr("width", cellWidth - 1)
     .attr("height", cellHeight - 1)
-    .attr("fill", (d) => color(d.rating));
+    .attr("fill", (d) => color(d.rating)); 
 
   rects.exit().remove();
+
+  // ====== AXIS TITLES + COLOR LEGEND (VISIBLE) ======
+
+  const xAxisGroup = ratingHeatmapSvg.select("g.x-axis");
+  const yAxisGroup = ratingHeatmapSvg.select("g.y-axis");
+  const legendGroup = ratingHeatmapSvg.select("g.legend-scale");
+
+  xAxisGroup.selectAll("*").remove();
+  yAxisGroup.selectAll("*").remove();
+  legendGroup.selectAll("*").remove();
+
+  // X label just below the heatmap, centered
+  xAxisGroup
+    .append("text")
+    .attr("x", margin.left + innerWidth / 2)
+    .attr("y", height - 6)
+    .attr("fill", "#e5e7eb")
+    .attr("text-anchor", "middle")
+    .attr("font-size", 12)
+    .text("Movies");
+
+  // Y label to the left of the heatmap
+  yAxisGroup
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -(margin.top + innerHeight / 2))
+    .attr("y", 16)
+    .attr("fill", "#e5e7eb")
+    .attr("text-anchor", "middle")
+    .attr("font-size", 12)
+    .text("Users");
+
+  // --- Color legend: darker = lower, brighter = higher rating ---
+  const legendHeight = 140;
+  const legendWidth = 10;
+
+  // sit to the right of the heatmap, on background area
+  const legendX = width - margin.right + 6;
+  const legendY = margin.top + (innerHeight - legendHeight) / 2;
+
+  let defs = ratingHeatmapSvg.select("defs");
+  if (defs.empty()) {
+    defs = ratingHeatmapSvg.append("defs");
+  }
+
+  let gradient = defs.select("#ratingLegend");
+  if (gradient.empty()) {
+    gradient = defs
+      .append("linearGradient")
+      .attr("id", "ratingLegend")
+      .attr("x1", "0%")
+      .attr("y1", "100%")
+      .attr("x2", "0%")
+      .attr("y2", "0%");
+  }
+
+  gradient.selectAll("stop").remove();
+  gradient.append("stop").attr("offset", "0%").attr("stop-color", color(1));
+  gradient.append("stop").attr("offset", "100%").attr("stop-color", color(5));
+
+  legendGroup.attr("transform", `translate(${legendX}, ${legendY})`);
+
+  legendGroup
+    .append("rect")
+    .attr("width", legendWidth)
+    .attr("height", legendHeight)
+    .style("fill", "url(#ratingLegend)");
+
+  const legendScale = d3.scaleLinear()
+    .domain([1, 5])
+    .range([legendHeight, 0]);
+
+  const legendAxis = d3.axisRight(legendScale)
+    .ticks(5)
+    .tickFormat(d => d.toFixed(0));
+
+  const legendAxisGroup = legendGroup
+    .append("g")
+    .attr("transform", `translate(${legendWidth + 4}, 0)`)
+    .call(legendAxis);
+
+  legendAxisGroup.selectAll("text")
+    .attr("fill", "#e5e7eb")
+    .attr("font-size", 10);
+
+  legendAxisGroup.selectAll("line, path")
+    .attr("stroke", "#9ca3af");
+
+  // 🔹 vertical label tied to the legend
+  legendGroup
+    .append("text")
+    .attr("transform", `translate(${legendWidth + 26}, ${legendHeight / 2}) rotate(-90)`)
+    .attr("fill", "#e5e7eb")
+    .attr("text-anchor", "middle")
+    .attr("font-size", 11)
+    .text("Rating");
 }
 
+
 /****************************************************
- * SLIDE 3: SIMILARITY VECTORS (cosine demo)
+ * SLIDE 3: COSINE SIMILARITY DEMO (3 USERS)
  ****************************************************/
 
-// simple genre basis we’ll use for the vectors
-const SIM_AXES = [
-  { id: "Action", angle: (270 * Math.PI) / 180, color: "#f97316" }, // orange, down
-  { id: "Comedy", angle: (330 * Math.PI) / 180, color: "#3b82f6" }, // blue, right-ish
-  { id: "Romance", angle: (150 * Math.PI) / 180, color: "#ec4899" }, // pink, left-up
-];
-
-const SIM_MOVIES = [
-  { id: "sudden-death", title: "Sudden Death", genres: ["Action"] },
+// hard-coded example users
+const COS_USERS = [
   {
-    id: "nine-months",
-    title: "Nine Months",
-    genres: ["Comedy", "Romance"],
+    id: 1,
+    name: "User 1",
+    comedy: 10,
+    romance: 1,
+    labelOffsetX: 12,
+    labelOffsetY: 8,
   },
   {
-    id: "the-mask",
-    title: "The Mask",
-    genres: ["Action", "Comedy"],
+    id: 474,
+    name: "User 474",
+    comedy: 8,
+    romance: 3,
+    labelOffsetX: 6,
+    labelOffsetY: 8,
   },
   {
-    id: "paris-i-love-you",
-    title: "Paris, I Love You",
-    genres: ["Romance"],
+    id: 606,
+    name: "User 606",
+    comedy: 2,
+    romance: 8,
+    labelOffsetX: -10,
+    labelOffsetY: -10,
   },
 ];
 
 let simInitialized = false;
 
-function simMovieVector2D(movie) {
-  let dx = 0;
-  let dy = 0;
-  movie.genres.forEach((g) => {
-    const axis = SIM_AXES.find((a) => a.id === g);
-    if (!axis) return;
-    dx += Math.cos(axis.angle);
-    dy += Math.sin(axis.angle);
-  });
-  const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  return { dx: dx / len, dy: dy / len };
+function cosineFromComponents(a, b) {
+  const dot = a.comedy * b.comedy + a.romance * b.romance;
+  const magA = Math.hypot(a.comedy, a.romance);
+  const magB = Math.hypot(b.comedy, b.romance);
+  if (!magA || !magB) return 0;
+  return dot / (magA * magB);
 }
 
-function simCosine(v1, v2) {
-  const dot = v1.dx * v2.dx + v1.dy * v2.dy;
-  return dot; // vectors are already normalized
-}
-
-function simAngleDeg(v1, v2) {
-  const cos = Math.max(-1, Math.min(1, simCosine(v1, v2)));
-  return (Math.acos(cos) * 180) / Math.PI;
+function angleFromCos(c) {
+  const clamped = Math.max(-1, Math.min(1, c));
+  return (Math.acos(clamped) * 180) / Math.PI;
 }
 
 async function initSimilarityHero() {
@@ -381,102 +493,106 @@ async function initSimilarityHero() {
   const panel = document.getElementById("hero-sim-panel");
   if (!panel) return;
 
-  // ----- SVG setup -----
   const svg = d3.select("#sim-vectors");
+  if (svg.empty()) return;
+
   const width = 520;
   const height = 260;
-  const origin = { x: width / 2, y: height * 0.65 };
-  const radius = 140;
+  const margin = { top: 20, right: 20, bottom: 40, left: 40 };
 
   svg
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
 
-  const gAxes = svg.append("g").attr("class", "sim-axes");
-  const gMovies = svg.append("g").attr("class", "sim-movie-vectors");
-  const gArc = svg.append("g").attr("class", "sim-angle-arc");
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
 
-  // draw genre axes
-  SIM_AXES.forEach((axis) => {
-    const x2 = origin.x + radius * Math.cos(axis.angle);
-    const y2 = origin.y + radius * Math.sin(axis.angle);
+  const g = svg.append("g").attr(
+    "transform",
+    `translate(${margin.left},${margin.top})`
+  );
 
-    gAxes
-      .append("line")
-      .attr("x1", origin.x)
-      .attr("y1", origin.y)
-      .attr("x2", x2)
-      .attr("y2", y2)
-      .attr("stroke", axis.color)
-      .attr("stroke-width", 3);
+  const xScale = d3.scaleLinear().domain([0, 10]).range([0, innerWidth]);
+  const yScale = d3.scaleLinear().domain([0, 10]).range([innerHeight, 0]);
 
-    gAxes
-      .append("text")
-      .attr("x", x2)
-      .attr("y", y2)
-      .attr("dy", axis.id === "Action" ? 18 : -8)
-      .attr("text-anchor", "middle")
-      .attr("fill", "#e5e7eb")
-      .attr("font-size", 12)
-      .text(axis.id);
-  });
+  // axes
+  g.append("g")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(xScale).ticks(5))
+    .call((axis) =>
+      axis
+        .append("text")
+        .attr("x", innerWidth / 2)
+        .attr("y", 32)
+        .attr("fill", "#e5e7eb")
+        .attr("text-anchor", "middle")
+        .text("Comedy preference")
+    );
 
-  // one vector per movie (we’ll recolor the selected two)
-  const movieVecData = SIM_MOVIES.map((m) => {
-    const v = simMovieVector2D(m);
-    const angle = Math.atan2(v.dy, v.dx);
-    const x2 = origin.x + radius * Math.cos(angle);
-    const y2 = origin.y - radius * Math.sin(angle);
-    return { movie: m, angle, x2, y2 };
-  });
+  g.append("g")
+    .call(d3.axisLeft(yScale).ticks(5))
+    .call((axis) =>
+      axis
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -innerHeight / 2)
+        .attr("y", -32)
+        .attr("fill", "#e5e7eb")
+        .attr("text-anchor", "middle")
+        .text("Romance preference")
+    );
 
-  const movieLines = gMovies
-    .selectAll("line")
-    .data(movieVecData)
-    .enter()
-    .append("line")
-    .attr("x1", origin.x)
-    .attr("y1", origin.y)
-    .attr("x2", (d) => d.x2)
-    .attr("y2", (d) => d.y2)
-    .attr("stroke", "#6b7280")
-    .attr("stroke-width", 2)
-    .attr("opacity", 0.5);
+  // group for vectors and labels
+  const vecGroup = g.append("g").attr("class", "cos-vectors");
+  const angleGroup = g.append("g").attr("class", "cos-angle-group");
 
-  // angle arc
-  const angleArcPath = gArc
-    .append("path")
-    .attr("fill", "none")
-    .attr("stroke", "#a855f7")
-    .attr("stroke-width", 2)
-    .attr("opacity", 0);
+  function drawVectors(bestPairIds) {
+    vecGroup.selectAll("*").remove();
+    angleGroup.selectAll("*").remove();
 
-  const angleArcLabel = gArc
-    .append("text")
-    .attr("fill", "#a855f7")
-    .attr("font-size", 12)
-    .attr("text-anchor", "middle")
-    .attr("opacity", 0);
+    const bestSet = new Set(bestPairIds);
 
-  function updateAngleArc(d1, d2) {
-    if (!d1 || !d2) {
-      angleArcPath.attr("opacity", 0);
-      angleArcLabel.attr("opacity", 0);
-      return;
-    }
+    COS_USERS.forEach((u) => {
+      const x2 = xScale(u.comedy);
+      const y2 = yScale(u.romance);
 
-    const v1 = simMovieVector2D(d1.movie);
-    const v2 = simMovieVector2D(d2.movie);
-    const angle1 = Math.atan2(v1.dy, v1.dx);
-    const angle2 = Math.atan2(v2.dy, v2.dx);
+      vecGroup
+        .append("line")
+        .attr("x1", xScale(0))
+        .attr("y1", yScale(0))
+        .attr("x2", x2)
+        .attr("y2", y2)
+        .attr("stroke", bestSet.has(u.id) ? "#e50914" : "#4b5563")
+        .attr("stroke-width", bestSet.has(u.id) ? 3 : 2)
+        .attr("opacity", bestSet.has(u.id) ? 1 : 0.5);
 
-    let start = angle1;
-    let end = angle2;
-    if (end < start) [start, end] = [end, start];
+      vecGroup
+        .append("circle")
+        .attr("cx", x2)
+        .attr("cy", y2)
+        .attr("r", 4)
+        .attr("fill", bestSet.has(u.id) ? "#e50914" : "#e5e7eb");
 
-    const mid = (start + end) / 2;
-    const arcR = 60;
+      vecGroup
+        .append("text")
+        .attr("x", x2 + u.labelOffsetX)
+        .attr("y", y2 + u.labelOffsetY)
+        .attr("fill", "#e5e7eb")
+        .attr("font-size", 11)
+        .text(`User ${u.id}`);
+    });
 
+    // draw angle arc for best pair
+    const uA = COS_USERS.find((u) => u.id === bestPairIds[0]);
+    const uB = COS_USERS.find((u) => u.id === bestPairIds[1]);
+    if (!uA || !uB) return;
+
+    const angleA = Math.atan2(uA.romance, uA.comedy);
+    const angleB = Math.atan2(uB.romance, uB.comedy);
+    let start = Math.min(angleA, angleB);
+    let end = Math.max(angleA, angleB);
+
+    const arcR = 45;
     const arc = d3
       .arc()
       .innerRadius(arcR)
@@ -484,110 +600,102 @@ async function initSimilarityHero() {
       .startAngle(start)
       .endAngle(end);
 
-    angleArcPath
+    angleGroup
+      .append("path")
       .attr(
         "transform",
-        `translate(${origin.x}, ${origin.y}) scale(1, -1)` // flip Y
+        `translate(${xScale(0)},${yScale(0)}) scale(1,-1)`
       )
       .attr("d", arc())
-      .attr("opacity", 1);
+      .attr("stroke", "#ffffff")
+      .attr("fill", "none")
+      .attr("stroke-width", 2);
 
-    const labelX = origin.x + (arcR + 15) * Math.cos(mid);
-    const labelY = origin.y - (arcR + 15) * Math.sin(mid);
+    const mid = (start + end) / 2;
+    const labelX = xScale(0) + (arcR + 12) * Math.cos(mid);
+    const labelY = yScale(0) - (arcR + 12) * Math.sin(mid);
 
-    const angleDeg = simAngleDeg(v1, v2).toFixed(1);
-    angleArcLabel
+    const cos = cosineFromComponents(uA, uB);
+    const angleDeg = angleFromCos(cos).toFixed(1);
+
+    angleGroup
+      .append("text")
       .attr("x", labelX)
       .attr("y", labelY)
-      .text(`${angleDeg}°`)
-      .attr("opacity", 1);
+      .attr("fill", "#ffffff")
+      .attr("font-size", 11)
+      .attr("text-anchor", "middle")
+      .text(`${angleDeg}°`);
   }
 
-  // ----- Movie list + interactions (no similarity slider) -----
-  const listEl = document.getElementById("sim-movie-list");
-  const resultTextEl = document.getElementById("sim-result-text");
-  const calcBtn = document.getElementById("sim-calc-btn");
+  function updateSummary() {
+    const pairs = [
+      [COS_USERS[0], COS_USERS[1]],
+      [COS_USERS[0], COS_USERS[2]],
+      [COS_USERS[1], COS_USERS[2]],
+    ];
 
-  SIM_MOVIES.forEach((m) => {
-    const item = document.createElement("button");
-    item.className = "sim-movie-item";
-    item.type = "button";
-    item.dataset.movieId = m.id;
-    item.innerHTML = `
-      <div class="sim-movie-title">${m.title}</div>
-      <div class="sim-movie-genres">${m.genres.join(", ")}</div>`;
-    listEl.appendChild(item);
-  });
+    const results = pairs.map(([a, b]) => {
+      const cos = cosineFromComponents(a, b);
+      const angle = angleFromCos(cos);
+      return { a, b, cos, angle };
+    });
 
-  function getSelectedMovieIds() {
-    return Array.from(
-      listEl.querySelectorAll(".sim-movie-item.selected")
-    ).map((el) => el.dataset.movieId);
+    results.sort((x, y) => y.cos - x.cos);
+    const best = results[0];
+
+    const summaryEl = document.getElementById("sim-summary");
+    if (!summaryEl) return;
+
+    summaryEl.innerHTML = `
+      <p><strong>Most similar pair:</strong> User ${best.a.id} &amp; User ${
+      best.b.id
+    }</p>
+      <p>Cosine similarity: <strong>${best.cos.toFixed(
+        3
+      )}</strong> (angle ≈ ${best.angle.toFixed(1)}°)</p>
+      <p><strong>All pairs:</strong></p>
+      <ul>
+        ${results
+          .map(
+            (r) =>
+              `<li>User ${r.a.id} vs User ${r.b.id}: cos = <strong>${r.cos.toFixed(
+                3
+              )}</strong>, angle ≈ ${r.angle.toFixed(1)}°</li>`
+          )
+          .join("")}
+      </ul>
+      <p class="sim-footnote">
+        Smaller angle → higher cosine → more similar taste.
+        The system would recommend movies from the most similar user.
+      </p>
+    `;
+
+    // update the chart to highlight the best pair
+    drawVectors([best.a.id, best.b.id]);
   }
 
-  listEl.addEventListener("click", (evt) => {
-    const btn = evt.target.closest(".sim-movie-item");
-    if (!btn) return;
-
-    let selected = getSelectedMovieIds();
-
-    if (btn.classList.contains("selected")) {
-      btn.classList.remove("selected");
-      selected = selected.filter((id) => id !== btn.dataset.movieId);
-    } else {
-      if (selected.length >= 2) {
-        const last = selected[selected.length - 1];
-        listEl
-          .querySelectorAll(".sim-movie-item.selected")
-          .forEach((el) => el.classList.remove("selected"));
-        const keep = listEl.querySelector(
-          `.sim-movie-item[data-movie-id="${last}"]`
-        );
-        if (keep) keep.classList.add("selected");
-      }
-      btn.classList.add("selected");
-    }
-
-    resultTextEl.textContent =
-      "Select exactly two movies above, then hit “Calculate”.";
-  });
-
-  calcBtn.addEventListener("click", () => {
-    const ids = getSelectedMovieIds();
-    if (ids.length !== 2) {
-      resultTextEl.textContent =
-        "Select exactly two movies above to calculate similarity.";
-      return;
-    }
-
-    const mA = SIM_MOVIES.find((m) => m.id === ids[0]);
-    const mB = SIM_MOVIES.find((m) => m.id === ids[1]);
-
-    const vA = simMovieVector2D(mA);
-    const vB = simMovieVector2D(mB);
-
-    const cos = simCosine(vA, vB);
-    const angleDeg = simAngleDeg(vA, vB);
-
-    // highlight selected vectors
-    movieLines
-      .attr("stroke", (d) => (ids.includes(d.movie.id) ? "#ffffff" : "#4b5563"))
-      .attr("stroke-width", (d) => (ids.includes(d.movie.id) ? 3 : 2))
-      .attr("opacity", (d) => (ids.includes(d.movie.id) ? 1 : 0.35));
-
-    const d1 = movieVecData.find((d) => d.movie.id === ids[0]);
-    const d2 = movieVecData.find((d) => d.movie.id === ids[1]);
-    updateAngleArc(d1, d2);
-
-    resultTextEl.textContent = `${mA.title} and ${mB.title} have cosine similarity ${cos.toFixed(
-      3
-    )} (≈ ${angleDeg.toFixed(
-      1
-    )}°). Smaller angles mean the movies “live” closer together in genre space.`;
-  });
-
+  // fill little data table under the chart
+  const tableBody = document.getElementById("sim-table-body");
+  if (tableBody) {
+    tableBody.innerHTML = COS_USERS.map(
+      (u) => `
+        <tr>
+          <td>${u.id}</td>
+          <td>${u.comedy}</td>
+          <td>${u.romance}</td>
+        </tr>`
+    ).join("");
+  }
+  
+  updateSummary();
+  // do NOT call updateSummary() here – wait for the button
   simInitialized = true;
+  
 }
+
+
+
 
 /****************************************************
  * Main hero renderer
@@ -603,13 +711,15 @@ async function renderHero(index) {
   const matrixPanel = document.getElementById("hero-matrix-panel");
   const simPanel = document.getElementById("hero-sim-panel");
   const vennPanel = document.getElementById("hero-panel-venn");  
+  const collabPanel = document.getElementById("hero-panel-5");
+
 
   // Reset meta + hide both interactive panels by default
   metaEl.innerHTML = "";
   if (matrixPanel) matrixPanel.classList.add("hero-matrix-panel--hidden");
   if (simPanel) simPanel.classList.add("hero-panel--hidden");
   if (vennPanel) vennPanel.classList.add("hero-panel--hidden");
-
+  if (collabPanel) collabPanel.classList.add("hero-panel--hidden");
   const metaParts = [];
   tagEl.textContent = slide.tag || "";
 
@@ -684,6 +794,31 @@ async function renderHero(index) {
     // no extra init needed here.
     return;
   }
+  if (slide.mode === "collab") {
+    banner.style.backgroundImage = "none";
+    banner.style.backgroundColor = "#020617";
+
+    // UPDATE LEFT HERO TEXT
+    titleEl.textContent = slide.title;
+    descEl.textContent = slide.description;
+
+    // UPDATE META TAGS
+    metaParts.push("Collaborative Filtering · Recommendations");
+    metaParts.push("Play the animation →");
+
+    metaParts.forEach((txt) => {
+      const span = document.createElement("span");
+      span.textContent = txt;
+      metaEl.appendChild(span);
+    });
+
+    // SHOW ONLY SLIDE 5 PANEL
+    const collabPanel = document.getElementById("hero-panel-5");
+    if (collabPanel) collabPanel.classList.remove("hero-panel--hidden");
+
+    return;
+  }
+
 
   /* MODE: story  (Hidden Trends hero with local image) */
   if (slide.mode === "story" && slide.customBackground) {
@@ -975,6 +1110,7 @@ const statusMessage4 = d3.select("#statusMessage-4");
 const thresholdSlider4 = document.getElementById("thresholdSlider-4");
 const thresholdValue4 = document.getElementById("thresholdValue-4");
 
+// 1) Load the CSV and keep only the 3 movies we care about
 d3.csv("data/venn.csv", function row(d) {
   return {
     userId: +d.userId,
@@ -1001,8 +1137,9 @@ d3.csv("data/venn.csv", function row(d) {
   });
 
 
-// Build Venn data for given threshold
+// 2) Build Venn data for a given threshold
 function buildVennData4(threshold) {
+  // Keep only ratings ≥ threshold
   const filtered = vennAllData4.filter(d => d.rating >= threshold);
 
   // Build user sets per movie
@@ -1015,8 +1152,9 @@ function buildVennData4(threshold) {
     );
   });
 
+  // Helper: intersection of users across a list of movies
   function usersInRegion(movieNames) {
-    if (movieNames.length === 0) return new Set();
+    if (!movieNames.length) return new Set();
     const [first, ...rest] = movieNames;
     let inter = new Set(userSets[first]);
     rest.forEach(name => {
@@ -1037,7 +1175,8 @@ function buildVennData4(threshold) {
     vennData.push({
       sets: [movieName],
       size: size,
-      label: `${movieName} (${size})`
+      // strip the year for label: "Toy Story (1995)" → "Toy Story"
+      label: `${movieName.replace(/\s*\(\d{4}\)/, "")} (${size})`
     });
   });
 
@@ -1065,7 +1204,7 @@ function buildVennData4(threshold) {
     });
   });
 
-  // Triple overlap
+  // Triple overlap (center region)
   const tripleUsers = usersInRegion(VENN_MOVIES);
   if (tripleUsers.size > 0) {
     const examples = Array.from(tripleUsers)
@@ -1083,24 +1222,29 @@ function buildVennData4(threshold) {
   return vennData;
 }
 
+
+// 3) Render for a particular threshold
 function renderVennForThreshold4(threshold) {
   const vennData = buildVennData4(threshold);
 
+  // Clear whatever was there
   vennContainer4.selectAll("*").remove();
 
   statusMessage4.text(
     `Showing users with rating ≥ ${threshold.toFixed(1)}.`
   );
 
+  // Create a fresh Venn diagram for this threshold
   vennChart4 = venn.VennDiagram()
     .width(600)
     .height(450);
 
   vennContainer4.datum(vennData).call(vennChart4);
 
-  // Hover behaviour
+  // Hover behaviour for venn areas
   vennContainer4.selectAll("g.venn-area")
-    .on("mouseover", function(d) {
+    .on("mouseover", function (d) {
+      // bring hovered region to the front
       venn.sortAreas(vennContainer4, d);
 
       const total = d.size;
@@ -1108,15 +1252,17 @@ function renderVennForThreshold4(threshold) {
       const examples = d.examples || [];
       const hasMore = total > examples.length;
 
-      tooltip4.style("display", "block").html("");
+      tooltip4
+        .style("display", "block")
+        .html("");
 
       let titleText = "";
       if (movieNames.length === 1) {
         titleText = `Users who rated "${movieNames[0]}" ≥ ${threshold.toFixed(1)}`;
       } else {
-        titleText = `Users who rated all of: ${movieNames
-          .map(name => `"${name}"`)
-          .join(", ")} ≥ ${threshold.toFixed(1)}`;
+        titleText = `Users who rated all of: ${
+          movieNames.map(name => `"${name}"`).join(", ")
+        } ≥ ${threshold.toFixed(1)}`;
       }
 
       tooltip4.append("div")
@@ -1141,23 +1287,24 @@ function renderVennForThreshold4(threshold) {
           );
       }
     })
-    .on("mousemove", function() {
+    .on("mousemove", function () {
       const e = d3.event;
       tooltip4
         .style("left", (e.pageX + 10) + "px")
         .style("top", (e.pageY + 10) + "px");
     })
-    .on("mouseout", function() {
+    .on("mouseout", function () {
       tooltip4.style("display", "none");
     });
 }
 
-// Slider listener for slide 4
-thresholdSlider4.addEventListener("input", function() {
+// 4) Slider listener for slide 4
+thresholdSlider4.addEventListener("input", function () {
   const t = parseFloat(thresholdSlider4.value);
   thresholdValue4.textContent = t.toFixed(1);
   renderVennForThreshold4(t);
 });
+
 
 
 
