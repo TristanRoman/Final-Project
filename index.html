@@ -12,11 +12,25 @@
 </head>
 
 <body>
+   <div id="tour-overlay"></div>
+<div id="tour-highlight"></div>
+
+<div id="tour-box">
+  <div id="tour-text"></div>
+  <button id="tour-next-btn" class="tour-next-btn">Next</button>
+</div>
+
+   <button id="start-tour-btn" class="tour-start-btn">
+  Start Tour
+</button>
+
   <div class="app">
 
     <!-- ===================== SLIDE 1: PROFILE SCREEN (UNCHANGED) ===================== -->
     <section id="profile-screen" class="screen screen--active">
       <div class="profile-card">
+       
+
 
         <div class="profile-logo">NETFLIX</div>
         <h1 class="profile-title">What are you watching?</h1>
@@ -141,9 +155,10 @@
               <p id="hero-description" class="hero-description"></p>
 
               <div class="hero-buttons">
-                <button class="btn btn--primary">
-                  <span class="btn-icon">►</span> Play
+                <button id="global-play-btn" class="btn btn--primary">
+                    <span class="btn-icon">▶</span> Play
                 </button>
+
                 <button
                   class="btn btn--secondary"
                   id="prototype-writeup-btn">
@@ -153,7 +168,7 @@
             </div>
 
             <!-- RIGHT: RATINGS MATRIX HERO CONTENT (YELLOW + PURPLE AREAS) -->
-            <div id="hero-matrix-panel" class="hero-matrix-panel hero-matrix-panel--hidden">
+            <div id="hero-matrix-panel" class="hero-matrix-panel hero-panel--hidden">
               <!-- Yellow box: the D3 heatmap -->
               <div class="matrix-heatmap-wrapper">
                 <svg id="matrix-heatmap"></svg>
@@ -259,33 +274,27 @@
             </div>
 <!-- ================= SLIDE 5 PANEL (Collaborative Filtering) ================= -->
             <div id="hero-panel-5" class="hero-panel hero-panel--hidden">
-              <div class="hero-widget">
+              <div class="hero-widget collab-widget">
+                
 
                 
 
-                <!-- Play Button -->
-                <!---<button id="playButton-5" class="netflix-btn">Play Animation</button> -->
-                <!-- Static visualization image -->
-                <div id="collabfilter-5">
-                  <img
-                    src="collabfilter-static.png"
-                    alt="Collaborative filtering visualization"
-                    class="collab-static-img"
-                  />
+                <!-- Styled box like Slide 4 -->
+                <div class="collab-box">
+                  <div id="collabfilter-container"></div>
                 </div>
-                
 
               </div>
             </div>
 
 
-
-          </div>
-          
-
-        </section>
+                 </div> <!-- closes .hero-inner -->
+        </section> <!-- closes .hero-banner -->
+    <!-- closes .home-main -->
 
 
+
+         
 
         <!-- ROW 1: SELECT FAVORITES -->
         <section class="row">
@@ -371,21 +380,36 @@
           </div>
         </section>
 
-      </main>
-    </section>
-
+      
+    
+</main> 
+</section>
   </div>
+      
 
- 
-<!-- d3 v5 (needed for d3.event and venn.js) -->
+
+<!-- d3 v5 (used for Venn + legacy code) -->
 <script src="https://d3js.org/d3.v5.min.js"></script>
 
 <!-- venn.js plugin -->
 <script src="https://benfred.github.io/venn.js/venn.js"></script>
 
-<!-- your app code -->
+<!-- your main app code -->
 <script src="script.js"></script>
-<script type="module" src="collabfilter-slide5.js"></script>
+
+<!-- NEW: D3 v7 ES module for collabfilter.js -->
+<script type="module">
+  import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+  window.d3v7 = d3; // expose for module below
+</script>
+
+<!-- collaborative-filtering animation -->
+<script type="module">
+  import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+  import "./collabfilter.js";
+</script>
+
+
 
 
 </body>

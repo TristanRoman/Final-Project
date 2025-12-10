@@ -1,3 +1,6 @@
+
+
+
 /****************************************************
  * SLIDE TOGGLE: Profiles ↔ Home
  ****************************************************/
@@ -5,16 +8,55 @@ const profileScreen = document.getElementById("profile-screen");
 const homeScreen = document.getElementById("home-screen");
 const continueBtn = document.getElementById("continue-btn");
 const backToProfiles = document.getElementById("back-to-profiles");
+let tourSlide = 1; // 1 = profile tour, 2 = home tour
 
+// CLICK: Go from Profile → Home
 continueBtn.addEventListener("click", () => {
-  profileScreen.classList.remove("screen--active");
-  homeScreen.classList.add("screen--active");
+    profileScreen.classList.remove("screen--active");
+    homeScreen.classList.add("screen--active");
+
+    
+
+    // If we are in tour AND coming from Slide 1 → start Slide 2 (Hero Intro)
+    if (tourSlide === 1) {
+        tourSlide = 2;
+
+        // Ensure hero 0 builds first
+        setTimeout(() => {
+            currentHeroIndex = 0;
+            renderHero(0);
+
+            // 🔥 NEW: Wait until the DOM elements truly exist
+            const waitForHero = setInterval(() => {
+                const hero = document.querySelector(".hero-banner");
+                const row = document.querySelector("#row-new");
+
+                if (hero && row) {
+                    clearInterval(waitForHero);
+                    startSlide2Tour();
+                }
+            }, 50);
+
+        }, 300);
+
+        return;
+    }
+    // Not in tour → just hide start button and exit
+    if (!tourMode) {
+        document.getElementById("start-tour-btn").style.display = "none";
+        return;
+    }
 });
 
+
+
+
+// CLICK: Go back Home → Profile
 backToProfiles.addEventListener("click", () => {
-  homeScreen.classList.remove("screen--active");
-  profileScreen.classList.add("screen--active");
+    homeScreen.classList.remove("screen--active");
+    profileScreen.classList.add("screen--active");
 });
+
 
 /****************************************************
  * TMDB CONFIG & HELPERS
@@ -702,6 +744,7 @@ async function initSimilarityHero() {
  ****************************************************/
 async function renderHero(index) {
   const slide = heroSlides[index];
+  const globalPlayBtn = document.getElementById("global-play-btn");
 
   const banner = document.querySelector(".hero-banner");
   const titleEl = document.getElementById("hero-title");
@@ -716,7 +759,7 @@ async function renderHero(index) {
 
   // Reset meta + hide both interactive panels by default
   metaEl.innerHTML = "";
-  if (matrixPanel) matrixPanel.classList.add("hero-matrix-panel--hidden");
+  if (matrixPanel) matrixPanel.classList.add("hero-panel--hidden");
   if (simPanel) simPanel.classList.add("hero-panel--hidden");
   if (vennPanel) vennPanel.classList.add("hero-panel--hidden");
   if (collabPanel) collabPanel.classList.add("hero-panel--hidden");
@@ -738,9 +781,10 @@ async function renderHero(index) {
       span.textContent = txt;
       metaEl.appendChild(span);
     });
+    
 
     if (matrixPanel) {
-      matrixPanel.classList.remove("hero-matrix-panel--hidden");
+      matrixPanel.classList.remove("hero-panel--hidden");
     }
 
     await initRatingMatrixHero();
@@ -751,6 +795,7 @@ async function renderHero(index) {
   if (slide.mode === "similarityVectors") {
     banner.style.backgroundImage = "none";
     banner.style.backgroundColor = "#020617";
+    
 
     titleEl.textContent = slide.title;
     descEl.textContent = slide.description;
@@ -762,6 +807,7 @@ async function renderHero(index) {
       span.textContent = txt;
       metaEl.appendChild(span);
     });
+    
 
     if (simPanel) {
       simPanel.classList.remove("hero-panel--hidden");
@@ -785,6 +831,7 @@ async function renderHero(index) {
       span.textContent = txt;
       metaEl.appendChild(span);
     });
+    
 
     if (vennPanel) {
       vennPanel.classList.remove("hero-panel--hidden");
@@ -797,6 +844,7 @@ async function renderHero(index) {
   if (slide.mode === "collab") {
     banner.style.backgroundImage = "none";
     banner.style.backgroundColor = "#020617";
+    
 
     // UPDATE LEFT HERO TEXT
     titleEl.textContent = slide.title;
@@ -811,10 +859,20 @@ async function renderHero(index) {
       span.textContent = txt;
       metaEl.appendChild(span);
     });
+    
 
     // SHOW ONLY SLIDE 5 PANEL
     const collabPanel = document.getElementById("hero-panel-5");
     if (collabPanel) collabPanel.classList.remove("hero-panel--hidden");
+    // Attach play button → runs animation
+    const playBtn = document.getElementById("collab-play-btn");
+    if (playBtn) {
+      playBtn.onclick = () => {
+        if (window.playCollabAnimation) {
+          window.playCollabAnimation(); // defined below
+        }
+      };
+    }
 
     return;
   }
@@ -870,16 +928,61 @@ async function renderHero(index) {
 const heroArrowLeft = document.querySelector(".hero-arrow--left");
 const heroArrowRight = document.querySelector(".hero-arrow--right");
 
+function handleHeroSlideChange() {
+    renderHero(currentHeroIndex);
+
+    if (!tourMode) return;
+
+    const slide = heroSlides[currentHeroIndex];
+
+    switch (slide.mode) {
+        case "ratingsMatrix":
+            tourSlide = 3;
+            startRatingMatrixTour();
+            break;
+
+        case "similarityVectors":
+            tourSlide = 4;
+            startSimilarityVectorTour();
+            break;
+
+        case "jaccardVenn":
+            tourSlide = 5;
+            startVennTour();
+            break;
+
+        case "collab":
+            tourSlide = 6;
+            startCollabTour();
+            break;
+
+        default:
+            // Story slides (Hidden Trends 1 & 2)
+            if (slide.id === "hidden-trends2") {
+                // final big-picture callout
+                tourSlide = 7;
+                startHiddenTrends2Tour();
+            } else {
+                // first Hidden Trends hero: no extra mini-tour
+                tourSlide = 2;
+            }
+            break;
+    }
+}
+
+
 heroArrowLeft.addEventListener("click", () => {
-  currentHeroIndex =
-    (currentHeroIndex - 1 + heroSlides.length) % heroSlides.length;
-  renderHero(currentHeroIndex);
+    currentHeroIndex = (currentHeroIndex - 1 + heroSlides.length) % heroSlides.length;
+    handleHeroSlideChange();
 });
 
 heroArrowRight.addEventListener("click", () => {
-  currentHeroIndex = (currentHeroIndex + 1) % heroSlides.length;
-  renderHero(currentHeroIndex);
+    currentHeroIndex = (currentHeroIndex + 1) % heroSlides.length;
+    handleHeroSlideChange();
 });
+
+
+
 
 // Initial hero
 renderHero(currentHeroIndex);
@@ -1350,3 +1453,310 @@ if (writeupBtn && writeupTooltip) {
     }
   });
 }
+
+
+const globalPlayBtn = document.getElementById("global-play-btn");
+
+globalPlayBtn.addEventListener("click", () => {
+    const slide = heroSlides[currentHeroIndex];
+
+    switch (slide.mode) {
+        case "collab":
+            if (window.playCollabAnimation) {
+                window.playCollabAnimation();
+            }
+            break;
+
+        case "similarityVectors":
+            if (window.playCosineAnimation) {
+                window.playCosineAnimation();
+            }
+            break;
+
+        case "ratingsMatrix":
+            if (window.playMatrixAnimation) {
+                window.playMatrixAnimation();
+            }
+            break;
+
+        case "jaccardVenn":
+            if (window.playVennAnimation) {
+                window.playVennAnimation();
+            }
+            break;
+
+        default:
+            console.log("No animation defined for this slide.");
+    }
+});
+
+
+/*Tour guide nifo afcter this */
+
+
+/**********************************************
+ * GUIDED TOUR (Safe, isolated)
+ **********************************************/
+let tourMode = false;
+let tourStep = 0;
+
+let tourSteps = [
+  {
+    highlight: ".profile-avatar:first-child",
+    text: "Welcome to visualizing movie reccomender systems! These avatars represent the core engines of your recommender system. Hover each one to learn what it does."
+  },
+  {
+    highlight: "#continue-btn",
+    text: "When you're ready, click START WATCHING to begin the experience."
+  }
+];
+
+function startSlide2Tour() {
+
+  tourSteps = [
+    {
+      highlight: ".hero-banner",
+      text: "Welcome to the main dashboard — everything you see here is powered by reccomender systems."
+    },
+  
+    {
+      highlight: "#row-new", // <-- existing, safe selector
+      text: "These movie rows adjust based on your preferences and similarity calculations."
+    }
+  ];
+
+  tourStep = 0;
+  showStep(tourStep);
+}
+/* -------------------------------
+   SLIDE 3 — Rating Matrix Hero
+--------------------------------*/
+function startRatingMatrixTour() {
+  tourSteps = [
+    {
+      highlight: "#hero-matrix-panel",
+      text: "This heatmap forms the data foundation — it shows how users rate movies in a giant grid."
+    },
+    {
+      highlight: ".matrix-explainer",
+      text: "Changing thresholds and user counts reveals patterns the system uses to predict ratings."
+    }
+  ];
+
+  tourStep = 0;
+  showStep(tourStep);
+}
+
+/* -------------------------------
+   SLIDE 4 — Cosine Similarity Hero
+--------------------------------*/
+function startSimilarityVectorTour() {
+  tourSteps = [
+    {
+      highlight: "#hero-sim-panel",
+      text: "Here user preferences become vectors — arrows showing how they lean toward genres."
+    },
+    {
+      highlight: "#sim-summary",
+      text: "Comparing angles tells the system which users have the most similar taste."
+    }
+  ];
+
+  tourStep = 0;
+  showStep(tourStep);
+}
+
+/* -------------------------------
+   SLIDE 5 — Jaccard Venn Hero
+--------------------------------*/
+function startVennTour() {
+  tourSteps = [
+    {
+      highlight: "#hero-panel-venn",
+      text: "This Venn diagram shows how audiences overlap between movies."
+    },
+    {
+      highlight: "#statusMessage-4",
+      text: "More overlap = more shared taste = stronger evidence for recommendations."
+    }
+  ];
+
+  tourStep = 0;
+  showStep(tourStep);
+}
+
+/* -------------------------------
+   SLIDE 6 — Collaborative Filtering Hero
+--------------------------------*/
+function startCollabTour() {
+  tourSteps = [
+    {
+      highlight: "#hero-panel-5",
+      text: "To start the animation, click play on the left. Collaborative filtering finds people with similar taste and borrows their ratings. "
+    },
+    {
+      highlight: "#row-trending",
+      text: "Your recommendations are generated by all previous stages working together."
+    }
+  ];
+
+  tourStep = 0;
+  showStep(tourStep);
+}
+/* -------------------------------
+   FINAL SLIDE — Hidden Trends Part 2
+   (Big-picture summary)
+--------------------------------*/
+/* -------------------------------
+   FINAL SLIDE — Hidden Trends Part 2
+   (Big-picture summary + favorites)
+--------------------------------*/
+function startHiddenTrends2Tour() {
+  tourSteps = [
+    {
+      // 1) Big-picture hero callout
+      highlight: ".hero-banner",
+      text:
+        "All the pieces you just saw — the big rating grid, the arrows, and the overlap circles — now work together behind the scenes in this final Hidden Trends view."
+    },
+    {
+      // 2) Select your favorite movies row
+      highlight: "#row-new",
+      text:
+        "Now you can click a few of your favorite movies here. In simple terms: you’re telling the system, “Please show me more like this.”"
+    },
+    {
+      // 3) You might also like row
+      highlight: "#row-trending",
+      text:
+        "Now this row shows movies you might like by looking at lots of people who picked the same favorites you did. If they liked these movies, you might like them too!"
+    }
+  ];
+
+  tourStep = 0;
+  showStep(tourStep);
+}
+
+
+
+const overlay = document.getElementById("tour-overlay");
+const highlight = document.getElementById("tour-highlight");
+const box = document.getElementById("tour-box");
+const boxText = document.getElementById("tour-text");
+const boxNext = document.getElementById("tour-next-btn");
+
+document.getElementById("start-tour-btn").addEventListener("click", () => {
+    tourMode = true;
+    tourSlide = 1;   // starting on slide 1 tour
+    tourStep = 0;
+    
+    document.getElementById("start-tour-btn").style.display = "none";
+
+    startTour(); // runs slide 1 tour steps
+});
+
+
+function startTour() {
+  overlay.classList.add("active");
+  showStep(tourStep);
+}
+
+function showStep(i) {
+  const step = tourSteps[i];
+  const el = document.querySelector(step.highlight);
+
+  if (!el) return console.warn("Tour target not found:", step.highlight);
+
+  const rect = el.getBoundingClientRect();
+
+  // Position the highlight box
+  highlight.style.left = rect.left - 8 + "px";
+  highlight.style.top = rect.top - 8 + "px";
+  highlight.style.width = rect.width + 16 + "px";
+  highlight.style.height = rect.height + 16 + "px";
+  highlight.classList.add("active");
+
+
+  // ----- Position tooltip (box) -----
+box.style.display = "block";
+
+// Default placement: below element
+let boxLeft = rect.left;
+let boxTop = rect.bottom + 20;
+
+const boxWidth = box.offsetWidth;
+const boxHeight = box.offsetHeight;
+const viewportWidth = window.innerWidth;
+const viewportHeight = window.innerHeight;
+
+// If box would go off bottom, move it above
+if (boxTop + boxHeight > viewportHeight - 20) {
+    boxTop = rect.top - boxHeight - 20;
+}
+
+// Prevent right overflow
+if (boxLeft + boxWidth > viewportWidth - 20) {
+    boxLeft = rect.right - boxWidth;
+}
+
+// Prevent left overflow
+if (boxLeft < 20) {
+    boxLeft = 20;
+}
+
+box.style.left = boxLeft + "px";
+box.style.top = boxTop + "px";
+boxText.textContent = step.text;
+
+}
+
+function updateHighlightPosition() {
+  // Only update if highlight is visible + a valid step exists
+  if (!highlight.classList.contains("active")) return;
+  if (tourStep == null || !tourSteps[tourStep]) return;
+
+  const step = tourSteps[tourStep];
+  const el = document.querySelector(step.highlight);
+  if (!el) return;
+
+  const rect = el.getBoundingClientRect();
+
+  highlight.style.left = rect.left - 8 + "px";
+  highlight.style.top = rect.top - 8 + "px";
+  highlight.style.width = rect.width + 16 + "px";
+  highlight.style.height = rect.height + 16 + "px";
+}
+
+window.addEventListener("scroll", () => {
+  requestAnimationFrame(updateHighlightPosition);
+});
+
+window.addEventListener("resize", () => {
+  requestAnimationFrame(updateHighlightPosition);
+});
+
+
+
+
+boxNext.addEventListener("click", () => {
+  tourStep++;
+  if (tourStep >= tourSteps.length) {
+    endTour();
+  } else {
+    showStep(tourStep);
+  }
+});
+
+function endTour() {
+  overlay.classList.remove("active");
+  highlight.classList.remove("active");
+  box.style.display = "none";
+
+  // Only fully end the tour after Hidden Trends Part 2 summary
+  if (tourSlide >= 7) {
+    tourMode = false;
+  }
+}
+
+
+

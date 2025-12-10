@@ -1,9 +1,20 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
+// Animation timing
+const FADE_DURATION = 800;
+const LINE_DURATION = 800;
 
-const svg = d3.select('#collabfilter-5')
+const svg = d3.select('#collabfilter-container')
+    .html("")
     .append('svg')
-    .attr('width', 1200)
-    .attr('height', 800);
+    .attr('width', '100%')
+    .attr('height', '100%')
+    .attr('viewBox', '0 0 1200 800')
+    .attr('preserveAspectRatio', 'xMidYMid meet');
+// MASTER GROUP — everything goes inside here
+const rootGroup = svg.append("g")
+    .attr("class", "root")
+    .attr("transform", "translate(100, 40) scale(0.75)");
+
 
 // Sampled data structure
 const users = [
@@ -13,10 +24,10 @@ const users = [
 ];
 
 const movies = [
-    { id: 'Toy Story', x: 50, y: 350, width: 100, height: 150, poster: 'toy-story-md-web.jpg' },
-    { id: 'Heat', x: 270, y: 350, width: 100, height: 150, poster: 'heat_1995_original_film_art_5000x.webp' },
-    { id: 'Se7en', x: 440, y: 350, width: 100, height: 150, poster: 'Seven-002.webp' },
-    { id: 'Recommended: Toy Story', x: 810, y: 350, width: 100, height: 150, poster: 'toy-story-md-web.jpg' },
+    { id: 'Toy Story', x: 50, y: 350, width: 100, height: 150, poster: 'img/toy-story-md-web.jpg' },
+    { id: 'Heat', x: 270, y: 350, width: 100, height: 150, poster: 'img/heat_1995_original_film_art_5000x.webp' },
+    { id: 'Se7en', x: 440, y: 350, width: 100, height: 150, poster: 'img/Seven-002.webp' },
+    { id: 'Recommended: Toy Story', x: 810, y: 350, width: 100, height: 150, poster: 'img/toy-story-md-web.jpg' },
 ];
 
 const connections = [
@@ -155,27 +166,25 @@ const user2Connections = connections.filter(c => c.source === 'user2');
 const user3ConnectionsToMovies = connections.filter(c => c.source === 'user3' && !c.target.startsWith('Recommended'));
 const user3ConnectionToRecommended = connections.find(c => c.source === 'user3' && c.target.startsWith('Recommended'));
 
-// Create groups for organization
-let linkGroup = svg.append('g').attr('class', 'links');
-let movieGroup = svg.append('g').attr('class', 'movies');
-let userGroup = svg.append('g').attr('class', 'users');
+let linkGroup = rootGroup.append('g').attr('class', 'links');
+let movieGroup = rootGroup.append('g').attr('class', 'movies');
+let userGroup = rootGroup.append('g').attr('class', 'users');
 
-// Animation timing
-const FADE_DURATION = 800;
-const LINE_DURATION = 800;
+
+
 
 // Main animation function
 function playAnimation() {
     // Clear existing elements and stop any ongoing transitions
-    svg.selectAll('g').interrupt().remove();
+    rootGroup.selectAll('*').interrupt().remove();
+
+    linkGroup = rootGroup.append('g').attr('class', 'links');
+    movieGroup = rootGroup.append('g').attr('class', 'movies');
+    userGroup = rootGroup.append('g').attr('class', 'users');
+
     
-    // Recreate groups
-    linkGroup = svg.append('g').attr('class', 'links');
-    movieGroup = svg.append('g').attr('class', 'movies');
-    userGroup = svg.append('g').attr('class', 'users');
-    
-    // Update button text to "Restart"
-    playButton.text('Restart Animation');
+ 
+
     
     // STEP 1: Initial movies fade in (The Usual Suspects, Heat, Seven)
     initialMovies.forEach((movie, i) => {
@@ -384,7 +393,11 @@ function playAnimation() {
         });
     }
 }
+// expose for main hero code
+window.playCollabAnimation = playAnimation;
 
-// Set up the play button
-const playButton = d3.select('#playButton');
-playButton.on('click', playAnimation);
+// Make the PLAY button run the animation every time it’s clicked
+document.getElementById("collab-play-btn")?.addEventListener("click", () => {
+    playAnimation();
+});
+
